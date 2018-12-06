@@ -1,12 +1,11 @@
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
 public class Board {
 
     private int[][] blocks;
 
-    int zeroI;
-    int zeroJ;
+    int zx;
+    int zy;
     // construct a board from an n-by-n array of blocks
     // (where blocks[i][j] = block in row i, column j)
     public Board(int[][] blocks) {
@@ -25,8 +24,8 @@ public class Board {
         for (int i = 0; i < dimension(); ++i) {
             for (int j = 0; j < dimension(); ++j) {
                 if (blocks[i][j] == 0) {
-                    zeroI = i;
-                    zeroJ = j;
+                    zx = i;
+                    zy = j;
                     return;
                 }
             }
@@ -74,21 +73,9 @@ public class Board {
 
     // a board that is obtained by exchanging any pair of blocks
     public Board twin() {
-        int i = zeroI;
-        int j = zeroJ;
-        int k = zeroI;
-        int l = zeroJ;
-        while ((i != zeroI && j != zeroJ) && (k != zeroI && l != zeroJ)) {
-            i = (int) (Math.random() * dimension());
-            j = (int) (Math.random() * dimension());
-            k = (int) (Math.random() * dimension());
-            l = (int) (Math.random() * dimension());
-        }
         Board b = new Board(blocks);
-        int temp = blocks[i][j];
-        b.blocks[i][j] = b.blocks[k][l];
-        b.blocks[k][l] = temp;
-
+        //TODO: swap two random blocks
+        
         return b;
     }
 
@@ -109,7 +96,33 @@ public class Board {
 
     // all neighboring boards
     public Iterable<Board> neighbors() {
-        return Collections.emptyList();
+        List<Board> neighbors = new ArrayList<>(4);
+
+        if (canMoveDown()) {
+            Board bro = new Board(blocks);
+            bro.down();
+            neighbors.add(bro);
+        }
+
+        if (canMoveLeft()) {
+            Board bro = new Board(blocks);
+            bro.left();
+            neighbors.add(bro);
+        }
+
+        if (canMoveUp()) {
+            Board bro = new Board(blocks);
+            bro.up();
+            neighbors.add(bro);
+        }
+
+        if (canMoveRight()) {
+            Board bro = new Board(blocks);
+            bro.right();
+            neighbors.add(bro);
+        }
+
+        return neighbors;
     }
 
     // string representation of this board (in the output format specified below)
@@ -130,8 +143,57 @@ public class Board {
         return blocks[i][j] == (i * j + j + 1);
     }
 
+    private boolean canMoveLeft() {
+        return zx != dimension() - 1;
+    }
+
+    private boolean canMoveUp() {
+        return zy != dimension() - 1;
+    }
+
+    private boolean canMoveRight() {
+        return zx != 0;
+    }
+
+    private boolean canMoveDown() {
+        return zy != 0;
+    }
+
+    private void left() {
+        for (int i = zx; i < dimension() - 1; ++i) {
+            blocks[i][zy] = blocks[i + 1][zy];
+        }
+        zx = dimension() - 1;
+        blocks[zx][zy] = 0;
+    }
+
+    private void up() {
+        for (int i = 0; i < dimension() - 1; ++i) {
+            blocks[zx][i] = blocks[zx][i + 1];
+        }
+        zy = dimension() - 1;
+        blocks[zx][zy] = 0;
+    }
+
+    private void right() {
+        for (int i = zx; i > 0; --i) {
+            blocks[i][zy] = blocks[i - 1][zy];
+        }
+        zx = 0;
+        blocks[zx][zy] = 0;
+    }
+
+    private void down() {
+        for (int i = zy; i > 0; --i) {
+            blocks[zx][i] = blocks[zx][i - 1];
+        }
+        zy = 0;
+        blocks[zx][zy] = 0;
+    }
+
     // unit tests (not graded)
     public static void main(String[] args) {
 
     }
+
 }
