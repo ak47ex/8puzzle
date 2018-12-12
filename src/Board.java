@@ -4,8 +4,9 @@ public class Board {
 
     private int[][] blocks;
 
-    int zx;
-    int zy;
+    private int zx;
+    private int zy;
+
     // construct a board from an n-by-n array of blocks
     // (where blocks[i][j] = block in row i, column j)
     public Board(int[][] blocks) {
@@ -14,19 +15,9 @@ public class Board {
         for (int i = 0; i < n; ++i) {
             for (int j = 0; j < n; ++j) {
                 this.blocks[i][j] = blocks[i][j];
-            }
-        }
-
-        updateZeroPointers();
-    }
-
-    private void updateZeroPointers() {
-        for (int i = 0; i < dimension(); ++i) {
-            for (int j = 0; j < dimension(); ++j) {
-                if (blocks[i][j] == 0) {
+                if (this.blocks[i][j] == 0) {
                     zx = i;
                     zy = j;
-                    return;
                 }
             }
         }
@@ -74,8 +65,19 @@ public class Board {
     // a board that is obtained by exchanging any pair of blocks
     public Board twin() {
         Board b = new Board(blocks);
-        //TODO: swap two random blocks
-        
+
+        int x1 = 0;
+        int y1 = 0;
+        int x2 = 0;
+        int y2 = 0;
+
+        while (x1 == zx) x1 = (int)(dimension() * Math.random());
+        while (y1 == zy) y1 = (int)(dimension() * Math.random());
+        while (x2 == zx) x2 = (int)(dimension() * Math.random());
+        while (y2 == zy) y2 = (int)(dimension() * Math.random());
+
+        swap(x1, y1, x2, y2);
+
         return b;
     }
 
@@ -140,7 +142,7 @@ public class Board {
     private boolean isOnPosition(int i, int j) {
         if (blocks[i][j] == 0) return i == j && i == dimension() - 1;
 
-        return blocks[i][j] == (i * j + j + 1);
+        return blocks[i][j] == (i * dimension() + j + 1);
     }
 
     private boolean canMoveLeft() {
@@ -189,6 +191,12 @@ public class Board {
         }
         zy = 0;
         blocks[zx][zy] = 0;
+    }
+
+    private void swap(int x1, int y1, int x2, int y2) {
+        int tmp = blocks[x1][y1];
+        blocks[x1][y1] = blocks[x2][y2];
+        blocks[x2][y2] = tmp;
     }
 
     // unit tests (not graded)
