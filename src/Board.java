@@ -88,12 +88,7 @@ public class Board {
         Board that = (Board)y;
         if (dimension() != that.dimension()) return false;
 
-        for (int i = 0; i < dimension(); ++i) {
-            for (int j = 0; j < dimension(); ++j) {
-                if (blocks[i][j] != that.blocks[i][j]) return false;
-            }
-        }
-        return true;
+        return Arrays.deepEquals(blocks, ((Board) y).blocks);
     }
 
     // all neighboring boards
@@ -170,7 +165,7 @@ public class Board {
     }
 
     private void up() {
-        for (int i = 0; i < dimension() - 1; ++i) {
+        for (int i = zy; i < dimension() - 1; ++i) {
             blocks[zx][i] = blocks[zx][i + 1];
         }
         zy = dimension() - 1;

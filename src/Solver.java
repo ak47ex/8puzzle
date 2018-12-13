@@ -3,12 +3,16 @@ import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.StdOut;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 public class Solver {
 
     private MinPQ<Board> originWay;
     private MinPQ<Board> twinWay;
+
+    private HashSet<Board> originPassed;
+    private HashSet<Board> twinPassed;
 
     private Board solution;
     private boolean solvable;
@@ -29,6 +33,9 @@ public class Solver {
         originWay = new MinPQ<>(boardComparator);
         twinWay = new MinPQ<>(boardComparator);
 
+        originPassed = new HashSet<>();
+        twinPassed = new HashSet<>();
+
         originWay.insert(initial);
         twinWay.insert(initial.twin());
 
@@ -39,15 +46,17 @@ public class Solver {
         while (!originWay.min().isGoal() || !twinWay.min().isGoal()) {
 
             Board origin = originWay.delMin();
+            originPassed.add(origin);
             originSolution.add(origin);
             for (Board neighbor : origin.neighbors()) {
-                originWay.insert(neighbor);
+                if (!originPassed.contains(neighbor)) originWay.insert(neighbor);
             }
 
             Board twin = twinWay.delMin();
+            twinPassed.add(twin);
             twinSolution.add(twin);
             for (Board neighbor : twin.neighbors()) {
-                twinWay.insert(neighbor);
+                if (!twinPassed.contains(neighbor)) twinWay.insert(neighbor);
             }
             moves++;
         }
@@ -58,7 +67,6 @@ public class Solver {
             solutionPath = originSolution;
         } else {
             solution = twinWay.min();
-            solutionPath = twinSolution;
         }
     }
 
