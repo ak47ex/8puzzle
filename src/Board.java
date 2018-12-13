@@ -1,4 +1,8 @@
-import java.util.*;
+import edu.princeton.cs.algs4.StdRandom;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Board {
 
@@ -6,6 +10,11 @@ public class Board {
 
     private int zx;
     private int zy;
+
+    private int hamming;
+    private int manhattan;
+
+    private boolean changed;
 
     // construct a board from an n-by-n array of blocks
     // (where blocks[i][j] = block in row i, column j)
@@ -21,6 +30,7 @@ public class Board {
                 }
             }
         }
+        changed = true;
     }
 
     // board dimension n
@@ -30,18 +40,18 @@ public class Board {
 
     // number of blocks out of place
     public int hamming() {
-            int h = 0;
-            for (int i = 0; i < dimension(); ++i) {
-                for (int j = 0; j < dimension(); ++j) {
-                    if (blocks[i][j] == 0) continue;
-                    if (!isOnPosition(i, j)) h++;
-                }
-            }
-            return h;
+        if (changed) recalculate();
+
+        return hamming;
     }
 
     // sum of Manhattan distances between blocks and goal
     public int manhattan() {
+        if (changed) recalculate();
+        return manhattan;
+    }
+
+    private void recalculate() {
         int m = 0;
 
         for (int i = 0; i < dimension(); ++i) {
@@ -50,11 +60,21 @@ public class Board {
 
                 int v = blocks[i][j];
                 int k = (v - 1) / dimension();
-                int l = (v - 1) / dimension();
-                m += Math.abs(k - i) + Math.abs(l - j);
+                int b = (v - 1) / dimension();
+                m += Math.abs(k - i) + Math.abs(b - j);
             }
         }
-        return m;
+        manhattan = m;
+
+        int h = 0;
+        for (int i = 0; i < dimension(); ++i) {
+            for (int j = 0; j < dimension(); ++j) {
+                if (blocks[i][j] == 0) continue;
+                if (!isOnPosition(i, j)) h++;
+            }
+        }
+        hamming = h;
+        changed = false;
     }
 
     // is this board the goal board?
@@ -66,26 +86,22 @@ public class Board {
     public Board twin() {
         Board b = new Board(blocks);
 
-        int x1 = 0;
-        int y1 = 0;
-        int x2 = 0;
-        int y2 = 0;
+        int x1 = (zx == 0 ? 1 : 0) % dimension();
+        int y1 = zy % dimension();
+        int x2 = (zx == 0 ? 1 : 0 ) % dimension();
+        int y2 = (zy + 1) % dimension();
 
-        while (x1 == zx) x1 = (int)(dimension() * Math.random());
-        while (y1 == zy) y1 = (int)(dimension() * Math.random());
-        while (x2 == zx) x2 = (int)(dimension() * Math.random());
-        while (y2 == zy) y2 = (int)(dimension() * Math.random());
-
-        swap(x1, y1, x2, y2);
+        b.swap(x1, y1, x2, y2);
 
         return b;
     }
 
     // does this board equal y?
     public boolean equals(Object y) {
-        if (!(y instanceof Board)) return super.equals(y);
-
-        Board that = (Board)y;
+        if (y == this) return true;
+        if (y == null) return false;
+        if (y.getClass() != this.getClass()) return false;
+        Board that = (Board) y;
         if (dimension() != that.dimension()) return false;
 
         return Arrays.deepEquals(blocks, ((Board) y).blocks);
@@ -157,46 +173,44 @@ public class Board {
     }
 
     private void left() {
-        for (int i = zx; i < dimension() - 1; ++i) {
-            blocks[i][zy] = blocks[i + 1][zy];
-        }
-        zx = dimension() - 1;
+
+        blocks[zx][zy] = blocks[zx + 1][zy];
+        zx = zx + 1;
         blocks[zx][zy] = 0;
+
+        changed = true;
     }
 
     private void up() {
-        for (int i = zy; i < dimension() - 1; ++i) {
-            blocks[zx][i] = blocks[zx][i + 1];
-        }
-        zy = dimension() - 1;
+        blocks[zx][zy] = blocks[zx][zy + 1];
+        zy = zy + 1;
         blocks[zx][zy] = 0;
+
+        changed = true;
     }
 
     private void right() {
-        for (int i = zx; i > 0; --i) {
-            blocks[i][zy] = blocks[i - 1][zy];
-        }
-        zx = 0;
+        blocks[zx][zy] = blocks[zx - 1][zy];
+        zx = zx - 1;
         blocks[zx][zy] = 0;
+
+        changed = true;
     }
 
     private void down() {
-        for (int i = zy; i > 0; --i) {
-            blocks[zx][i] = blocks[zx][i - 1];
-        }
-        zy = 0;
+        blocks[zx][zy] = blocks[zx][zy - 1];
+        zy = zy - 1;
         blocks[zx][zy] = 0;
+
+        changed = true;
     }
 
     private void swap(int x1, int y1, int x2, int y2) {
         int tmp = blocks[x1][y1];
         blocks[x1][y1] = blocks[x2][y2];
         blocks[x2][y2] = tmp;
-    }
 
-    // unit tests (not graded)
-    public static void main(String[] args) {
-
+        changed = true;
     }
 
 }

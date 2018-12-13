@@ -3,73 +3,56 @@ import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.StdOut;
 
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedList;
+
 
 public class Solver {
 
-    private MinPQ<Board> originWay;
-    private MinPQ<Board> twinWay;
-
-    private HashSet<Board> originPassed;
-    private HashSet<Board> twinPassed;
-
-    private Board solution;
     private boolean solvable;
 
     private LinkedList<Board> solutionPath;
 
-    private int moves;
+    private final int moves;
 
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
-        Comparator<Board> boardComparator = new Comparator<Board>() {
-            @Override
-            public int compare(Board b1, Board b2) {
-                return Integer.compare(b1.manhattan() + b1.hamming(), b2.manhattan() + b2.hamming());
-            }
-        };
 
-        originWay = new MinPQ<>(boardComparator);
-        twinWay = new MinPQ<>(boardComparator);
 
-        originPassed = new HashSet<>();
-        twinPassed = new HashSet<>();
+        Comparator<Board> boardComparator = Comparator.comparingInt(Board::manhattan);
+        MinPQ<Board> originWay = new MinPQ<>(boardComparator);
+        MinPQ<Board> twinWay = new MinPQ<>(boardComparator);
 
         originWay.insert(initial);
         twinWay.insert(initial.twin());
 
         LinkedList<Board> originSolution = new LinkedList<>();
-        LinkedList<Board> twinSolution = new LinkedList<>();
 
-        moves = 0;
-        while (!originWay.min().isGoal() || !twinWay.min().isGoal()) {
+        Board originPredecessor = null;
+        Board twinPredecessor = null;
+        initial.manhattan();
 
+        int move = 0;
+        while (!originWay.min().isGoal() && !twinWay.min().isGoal()) {
             Board origin = originWay.delMin();
-            originPassed.add(origin);
             originSolution.add(origin);
             for (Board neighbor : origin.neighbors()) {
-                if (!originPassed.contains(neighbor)) originWay.insert(neighbor);
+                if (!neighbor.equals(originPredecessor)) originWay.insert(neighbor);
             }
+            originPredecessor = origin;
 
             Board twin = twinWay.delMin();
-            twinPassed.add(twin);
-            twinSolution.add(twin);
             for (Board neighbor : twin.neighbors()) {
-                if (!twinPassed.contains(neighbor)) twinWay.insert(neighbor);
+                if (!neighbor.equals(twinPredecessor)) twinWay.insert(neighbor);
             }
-            moves++;
+            twinPredecessor = twin;
+            move++;
         }
-
+        moves = move;
         if (originWay.min().isGoal()) {
-            solution = originWay.min();
             solvable = true;
             solutionPath = originSolution;
-        } else {
-            solution = twinWay.min();
         }
     }
-
 
     // is the initial board solvable?
     public boolean isSolvable() {
