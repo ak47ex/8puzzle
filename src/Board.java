@@ -1,10 +1,10 @@
-import edu.princeton.cs.algs4.StdRandom;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class Board {
+
+    private final int size;
 
     private int[][] blocks;
 
@@ -19,10 +19,10 @@ public class Board {
     // construct a board from an n-by-n array of blocks
     // (where blocks[i][j] = block in row i, column j)
     public Board(int[][] blocks) {
-        int n = blocks.length;
-        this.blocks = new int[n][n];
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
+        size = blocks.length;
+        this.blocks = new int[size][size];
+        for (int i = 0; i < size; ++i) {
+            for (int j = 0; j < size; ++j) {
                 this.blocks[i][j] = blocks[i][j];
                 if (this.blocks[i][j] == 0) {
                     zx = i;
@@ -35,7 +35,7 @@ public class Board {
 
     // board dimension n
     public int dimension() {
-        return blocks.length;
+        return size;
     }
 
     // number of blocks out of place
@@ -53,26 +53,22 @@ public class Board {
 
     private void recalculate() {
         int m = 0;
+        int h = 0;
 
-        for (int i = 0; i < dimension(); ++i) {
-            for (int j = 0; j < dimension(); ++j) {
-                if (isOnPosition(i, j)) continue;
-
+        int item = 0;
+        for (int i = 0; i < size; ++i) {
+            for (int j = 0; j < size; ++j) {
+                item++;
                 int v = blocks[i][j];
-                int k = (v - 1) / dimension();
-                int b = (v - 1) / dimension();
+                if (item == v || v == 0) continue;
+                h++;
+
+                int k = (v - 1) / size;
+                int b = (v - 1) % size;
                 m += Math.abs(k - i) + Math.abs(b - j);
             }
         }
         manhattan = m;
-
-        int h = 0;
-        for (int i = 0; i < dimension(); ++i) {
-            for (int j = 0; j < dimension(); ++j) {
-                if (blocks[i][j] == 0) continue;
-                if (!isOnPosition(i, j)) h++;
-            }
-        }
         hamming = h;
         changed = false;
     }
@@ -86,10 +82,10 @@ public class Board {
     public Board twin() {
         Board b = new Board(blocks);
 
-        int x1 = (zx == 0 ? 1 : 0) % dimension();
-        int y1 = zy % dimension();
-        int x2 = (zx == 0 ? 1 : 0 ) % dimension();
-        int y2 = (zy + 1) % dimension();
+        int x1 = (zx == 0 ? 1 : 0) % size;
+        int y1 = zy % size;
+        int x2 = (zx == 0 ? 1 : 0) % size;
+        int y2 = (zy + 1) % size;
 
         b.swap(x1, y1, x2, y2);
 
@@ -102,7 +98,7 @@ public class Board {
         if (y == null) return false;
         if (y.getClass() != this.getClass()) return false;
         Board that = (Board) y;
-        if (dimension() != that.dimension()) return false;
+        if (size != that.size) return false;
 
         return Arrays.deepEquals(blocks, ((Board) y).blocks);
     }
@@ -140,9 +136,9 @@ public class Board {
 
     // string representation of this board (in the output format specified below)
     public String toString() {
-        StringBuilder s = new StringBuilder(dimension() + "\n");
-        for (int i = 0; i < dimension(); i++) {
-            for (int j = 0; j < dimension(); j++) {
+        StringBuilder s = new StringBuilder(size + "\n");
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
                 s.append(String.format("%2d ", blocks[i][j]));
             }
             s.append("\n");
@@ -150,18 +146,12 @@ public class Board {
         return s.toString();
     }
 
-    private boolean isOnPosition(int i, int j) {
-        if (blocks[i][j] == 0) return i == j && i == dimension() - 1;
-
-        return blocks[i][j] == (i * dimension() + j + 1);
-    }
-
     private boolean canMoveLeft() {
-        return zx != dimension() - 1;
+        return zx != size - 1;
     }
 
     private boolean canMoveUp() {
-        return zy != dimension() - 1;
+        return zy != size - 1;
     }
 
     private boolean canMoveRight() {

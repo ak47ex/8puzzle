@@ -8,6 +8,16 @@ import java.util.LinkedList;
 
 public class Solver {
 
+    private class Pair<A, B> {
+        A key;
+        B value;
+
+        Pair(A key, B value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
     private boolean solvable;
 
     private LinkedList<Board> solutionPath;
@@ -15,15 +25,15 @@ public class Solver {
     private final int moves;
 
     // find a solution to the initial board (using the A* algorithm)
-    public Solver(Board initial) {
+    private Solver(Board initial) {
 
 
-        Comparator<Board> boardComparator = Comparator.comparingInt(Board::manhattan);
-        MinPQ<Board> originWay = new MinPQ<>(boardComparator);
-        MinPQ<Board> twinWay = new MinPQ<>(boardComparator);
+        Comparator<Pair<Integer, Board>> boardComparator = Comparator.comparingInt(e -> e.key + e.value.manhattan());
+        MinPQ<Pair<Integer, Board>> originWay = new MinPQ<>(boardComparator);
+        MinPQ<Pair<Integer, Board>> twinWay = new MinPQ<>(boardComparator);
 
-        originWay.insert(initial);
-        twinWay.insert(initial.twin());
+        originWay.insert(new Pair<>(0, initial));
+        twinWay.insert(new Pair<>(0, initial.twin()));
 
         LinkedList<Board> originSolution = new LinkedList<>();
 
@@ -31,24 +41,24 @@ public class Solver {
         Board twinPredecessor = null;
         initial.manhattan();
 
-        int move = 0;
-        while (!originWay.min().isGoal() && !twinWay.min().isGoal()) {
-            Board origin = originWay.delMin();
+        while (!originWay.min().value.isGoal() && !twinWay.min().value.isGoal()) {
+            Pair<Integer, Board> min = originWay.delMin();
+            Board origin = min.value;
             originSolution.add(origin);
             for (Board neighbor : origin.neighbors()) {
-                if (!neighbor.equals(originPredecessor)) originWay.insert(neighbor);
+                if (!neighbor.equals(originPredecessor)) originWay.insert(new Pair<>(min.key + 1, neighbor));
             }
             originPredecessor = origin;
 
-            Board twin = twinWay.delMin();
+            min = twinWay.delMin();
+            Board twin = min.value;
             for (Board neighbor : twin.neighbors()) {
-                if (!neighbor.equals(twinPredecessor)) twinWay.insert(neighbor);
+                if (!neighbor.equals(twinPredecessor)) twinWay.insert(new Pair<>(min.key + 1, neighbor));
             }
             twinPredecessor = twin;
-            move++;
         }
-        moves = move;
-        if (originWay.min().isGoal()) {
+        moves =  originWay.min().key;
+        if (originWay.min().value.isGoal()) {
             solvable = true;
             solutionPath = originSolution;
         }
