@@ -8,59 +8,51 @@ import java.util.LinkedList;
 
 public class Solver {
 
-    private class Pair<A, B> {
-        A key;
-        B value;
-
-        Pair(A key, B value) {
-            this.key = key;
-            this.value = value;
-        }
-    }
-
     private boolean solvable;
 
-    private LinkedList<Board> solutionPath;
+    private Iterable<Board> solutionPath;
 
     private final int moves;
 
     // find a solution to the initial board (using the A* algorithm)
-    private Solver(Board initial) {
+    public Solver(Board initial) {
+        if (initial == null) throw new IllegalArgumentException();
 
+        Comparator<SearchNode> boardComparator = Comparator.comparingInt(node -> node.priority);
+        MinPQ<SearchNode> originWay = new MinPQ<>(boardComparator);
+        MinPQ<SearchNode> twinWay = new MinPQ<>(boardComparator);
 
-        Comparator<Pair<Integer, Board>> boardComparator = Comparator.comparingInt(e -> e.key + e.value.manhattan());
-        MinPQ<Pair<Integer, Board>> originWay = new MinPQ<>(boardComparator);
-        MinPQ<Pair<Integer, Board>> twinWay = new MinPQ<>(boardComparator);
+        originWay.insert(new SearchNode(initial));
+        twinWay.insert(new SearchNode(initial.twin()));
 
-        originWay.insert(new Pair<>(0, initial));
-        twinWay.insert(new Pair<>(0, initial.twin()));
-
-        LinkedList<Board> originSolution = new LinkedList<>();
-
-        Board originPredecessor = null;
-        Board twinPredecessor = null;
         initial.manhattan();
 
-        while (!originWay.min().value.isGoal() && !twinWay.min().value.isGoal()) {
-            Pair<Integer, Board> min = originWay.delMin();
-            Board origin = min.value;
-            originSolution.add(origin);
+        while (!originWay.min().board.isGoal() && !twinWay.min().board.isGoal()) {
+            SearchNode min = originWay.delMin();
+            Board origin = min.board;
+
             for (Board neighbor : origin.neighbors()) {
-                if (!neighbor.equals(originPredecessor)) originWay.insert(new Pair<>(min.key + 1, neighbor));
+                if (min.predecessor == null || !neighbor.equals(min.predecessor.board)) originWay.insert(new SearchNode(neighbor, min));
             }
-            originPredecessor = origin;
 
             min = twinWay.delMin();
-            Board twin = min.value;
+            Board twin = min.board;
             for (Board neighbor : twin.neighbors()) {
-                if (!neighbor.equals(twinPredecessor)) twinWay.insert(new Pair<>(min.key + 1, neighbor));
+                if (min.predecessor == null || !neighbor.equals(min.predecessor.board)) twinWay.insert(new SearchNode(neighbor, min));
             }
-            twinPredecessor = twin;
         }
-        moves =  originWay.min().key;
-        if (originWay.min().value.isGoal()) {
+        moves =  originWay.min().moves;
+        if (originWay.min().board.isGoal()) {
             solvable = true;
-            solutionPath = originSolution;
+
+            SearchNode tail = originWay.min();
+            LinkedList<Board> path = new LinkedList<>();
+            while (tail != null) {
+                path.push(tail.board);
+                tail = tail.predecessor;
+            }
+            solutionPath = path;
+
         }
     }
 
@@ -102,4 +94,28 @@ public class Solver {
                 StdOut.println(board);
         }
     }
+
+    private class SearchNode {
+        final SearchNode predecessor;
+        final Board board;
+        final int moves;
+        final int priority;
+
+
+        SearchNode(Board board) {
+            this.board = board;
+            predecessor = null;
+            moves = 0;
+            priority = board.manhattan();
+        }
+
+        SearchNode(Board board, SearchNode prevNode) {
+            this.board = board;
+            predecessor = prevNode;
+            moves = prevNode.moves + 1;
+            priority = moves + board.manhattan();
+        }
+
+    }
+
 }

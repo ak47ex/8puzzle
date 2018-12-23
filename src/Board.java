@@ -14,12 +14,13 @@ public class Board {
     private int hamming;
     private int manhattan;
 
-    private boolean changed;
-
     // construct a board from an n-by-n array of blocks
     // (where blocks[i][j] = block in row i, column j)
     public Board(int[][] blocks) {
         size = blocks.length;
+
+        int item = 0;
+
         this.blocks = new int[size][size];
         for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {
@@ -28,9 +29,15 @@ public class Board {
                     zx = i;
                     zy = j;
                 }
+
+                item++;
+                int v = blocks[i][j];
+                if (item == v || v == 0) continue;
+                hamming++;
+
+                manhattan += manhattan(i, j, v);
             }
         }
-        changed = true;
     }
 
     // board dimension n
@@ -40,37 +47,12 @@ public class Board {
 
     // number of blocks out of place
     public int hamming() {
-        if (changed) recalculate();
-
         return hamming;
     }
 
     // sum of Manhattan distances between blocks and goal
     public int manhattan() {
-        if (changed) recalculate();
         return manhattan;
-    }
-
-    private void recalculate() {
-        int m = 0;
-        int h = 0;
-
-        int item = 0;
-        for (int i = 0; i < size; ++i) {
-            for (int j = 0; j < size; ++j) {
-                item++;
-                int v = blocks[i][j];
-                if (item == v || v == 0) continue;
-                h++;
-
-                int k = (v - 1) / size;
-                int b = (v - 1) % size;
-                m += Math.abs(k - i) + Math.abs(b - j);
-            }
-        }
-        manhattan = m;
-        hamming = h;
-        changed = false;
     }
 
     // is this board the goal board?
@@ -80,16 +62,12 @@ public class Board {
 
     // a board that is obtained by exchanging any pair of blocks
     public Board twin() {
-        Board b = new Board(blocks);
-
         int x1 = (zx == 0 ? 1 : 0) % size;
         int y1 = zy % size;
         int x2 = (zx == 0 ? 1 : 0) % size;
         int y2 = (zy + 1) % size;
 
-        b.swap(x1, y1, x2, y2);
-
-        return b;
+        return swap(x1, y1, x2, y2);
     }
 
     // does this board equal y?
@@ -107,29 +85,13 @@ public class Board {
     public Iterable<Board> neighbors() {
         List<Board> neighbors = new ArrayList<>(4);
 
-        if (canMoveDown()) {
-            Board bro = new Board(blocks);
-            bro.down();
-            neighbors.add(bro);
-        }
+        if (canMoveDown()) neighbors.add(down());
 
-        if (canMoveLeft()) {
-            Board bro = new Board(blocks);
-            bro.left();
-            neighbors.add(bro);
-        }
+        if (canMoveLeft()) neighbors.add(left());
 
-        if (canMoveUp()) {
-            Board bro = new Board(blocks);
-            bro.up();
-            neighbors.add(bro);
-        }
+        if (canMoveUp()) neighbors.add(up());
 
-        if (canMoveRight()) {
-            Board bro = new Board(blocks);
-            bro.right();
-            neighbors.add(bro);
-        }
+        if (canMoveRight()) neighbors.add(right());
 
         return neighbors;
     }
@@ -162,45 +124,109 @@ public class Board {
         return zy != 0;
     }
 
-    private void left() {
+    private Board left() {
+        Board b = new Board(blocks);
 
-        blocks[zx][zy] = blocks[zx + 1][zy];
-        zx = zx + 1;
-        blocks[zx][zy] = 0;
+        int v = b.blocks[b.zx + 1][b.zy];
 
-        changed = true;
+        int manhWas = manhattan(b.zx + 1, b.zy, v);
+        int manhBecame = manhattan(b.zx, b.zy, v);
+        int manh = manhWas - manhBecame;
+        b.manhattan -= manh;
+
+        if (manhBecame == 0) b.hamming -= 1;
+        if (manhWas == 0) b.hamming += 1;
+
+        b.blocks[b.zx][b.zy] = b.blocks[b.zx + 1][b.zy];
+        b.zx = b.zx + 1;
+        b.blocks[b.zx][b.zy] = 0;
+
+        return b;
     }
 
-    private void up() {
-        blocks[zx][zy] = blocks[zx][zy + 1];
-        zy = zy + 1;
-        blocks[zx][zy] = 0;
+    private Board up() {
+        Board b = new Board(blocks);
 
-        changed = true;
+        int v = b.blocks[b.zx][b.zy + 1];
+        int manhWas = manhattan(b.zx, b.zy + 1, v);
+        int manhBecame = manhattan(b.zx, b.zy, v);
+        int manh = manhWas - manhBecame;
+        b.manhattan -= manh;
+
+        if (manhBecame == 0) b.hamming -= 1;
+        if (manhWas == 0) b.hamming += 1;
+
+        b.blocks[b.zx][b.zy] = b.blocks[b.zx][b.zy + 1];
+        b.zy = b.zy + 1;
+        b.blocks[b.zx][b.zy] = 0;
+
+        return b;
     }
 
-    private void right() {
-        blocks[zx][zy] = blocks[zx - 1][zy];
-        zx = zx - 1;
-        blocks[zx][zy] = 0;
+    private Board right() {
+        Board b = new Board(blocks);
 
-        changed = true;
+        int v = b.blocks[b.zx - 1][b.zy];
+        int manhWas = manhattan(b.zx - 1, b.zy, v);
+        int manhBecame = manhattan(b.zx, b.zy, v);
+        int manh = manhWas - manhBecame;
+        b.manhattan -= manh;
+
+        if (manhBecame == 0) b.hamming -= 1;
+        if (manhWas == 0) b.hamming += 1;
+
+        b.blocks[b.zx][b.zy] = b.blocks[b.zx - 1][b.zy];
+        b.zx = b.zx - 1;
+        b.blocks[b.zx][b.zy] = 0;
+
+        return b;
     }
 
-    private void down() {
-        blocks[zx][zy] = blocks[zx][zy - 1];
-        zy = zy - 1;
-        blocks[zx][zy] = 0;
+    private Board down() {
+        Board b = new Board(blocks);
 
-        changed = true;
+        int v = b.blocks[b.zx][b.zy - 1];
+        int manhWas = manhattan(b.zx, b.zy - 1, v);
+        int manhBecame = manhattan(b.zx, b.zy, v);
+        int manh = manhWas - manhBecame;
+        b.manhattan -= manh;
+
+        if (manhBecame == 0) b.hamming -= 1;
+        if (manhWas == 0) b.hamming += 1;
+
+        b.blocks[b.zx][b.zy] = b.blocks[b.zx][b.zy - 1];
+        b.zy = b.zy - 1;
+        b.blocks[b.zx][b.zy] = 0;
+
+        return b;
     }
 
-    private void swap(int x1, int y1, int x2, int y2) {
-        int tmp = blocks[x1][y1];
-        blocks[x1][y1] = blocks[x2][y2];
-        blocks[x2][y2] = tmp;
+    private Board swap(int x1, int y1, int x2, int y2) {
+        Board b = new Board(blocks);
 
-        changed = true;
+        int manhWas = manhattan(x1, y1, b.blocks[x1][y1]) + manhattan(x2, y2, b.blocks[x2][y2]);
+        if (manhattan(x1, y1, b.blocks[x1][y1]) == 0) b.hamming += 1;
+        if (manhattan(x2, y2, b.blocks[x2][y2]) == 0) b.hamming += 1;
+
+        b.blocks[x2][y2] = blocks[x1][y1];
+        b.blocks[x1][y1] = blocks[x2][y2];
+
+        if (manhattan(x1, y1, b.blocks[x1][y1]) == 0) b.hamming -= 1;
+        if (manhattan(x2, y2, b.blocks[x2][y2]) == 0) b.hamming -= 1;
+
+        int manhBecame = manhattan(x1, y1, b.blocks[x1][y1]) + manhattan(x2, y2, b.blocks[x2][y2]);
+        int manh = manhWas - manhBecame;
+
+        b.manhattan -= manh;
+
+
+        return b;
+    }
+
+    private int manhattan(int row, int col, int val) {
+        int i = (val - 1) / size;
+        int j = (val - 1) % size;
+        return Math.abs(i - row) + Math.abs(j - col);
     }
 
 }
